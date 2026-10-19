@@ -1,0 +1,201 @@
+{
+  "name": "Weekly lead list: Evaboot to Google Sheets, scored by AI",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {
+        "hook": null,
+        "maxResults": 1
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": 0,
+          "y": 0,
+          "name": "Evaboot export finished"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "module": "builtin:BasicFeeder",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "array": "{{1.prospects}}"
+      },
+      "metadata": {
+        "designer": {
+          "x": 300,
+          "y": 0,
+          "name": "One bundle per lead"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "module": "json:CreateJSON",
+      "version": 1,
+      "parameters": {
+        "type": null,
+        "space": ""
+      },
+      "filter": {
+        "name": "Matching leads with a safe email",
+        "conditions": [
+          [
+            {
+              "a": "{{2.`Matches Filters`}}",
+              "b": "YES",
+              "o": "text:equal:ci"
+            },
+            {
+              "a": "{{2.`Email Status`}}",
+              "b": "safe",
+              "o": "text:equal:ci"
+            }
+          ]
+        ]
+      },
+      "mapper": {
+        "model": "gpt-6-luna",
+        "input": "Job title: {{2.`Current Job`}}\nCompany: {{2.`Company Name`}}\nCompany industry: {{ifempty(2.`Company Industry`; \"unknown\")}}\nCompany employees: {{ifempty(2.`Company Employee Exact Count`; \"unknown\")}}\nCompany location: {{ifempty(2.`Company Location`; \"unknown\")}}\nLead location: {{ifempty(2.Location; \"unknown\")}}\nSales team size: {{ifempty(2.`Sales Team Size`; \"unknown\")}}\nCompany description: {{substring(2.`Company Description`; 0; 600)}}",
+        "questions": [
+          {
+            "type": "score",
+            "name": "icp_fit",
+            "instructions": "How well does this lead match the ideal customer profile below?\n\n# Ideal customer profile\n\n<!--\nReplace every line below with your own profile. Keep it short and concrete:\nthe model reads this whole file for every lead.\nWrite each criterion so a stranger could answer yes or no from a LinkedIn profile.\n-->\n\n## Company must-haves\n\n- Industry: B2B software (SaaS), IT services, or recruiting agencies.\n- Size: 11 to 500 employees.\n- Location: Europe or North America.\n- Sells to other businesses, with an outbound sales team.\n\n## Buyer must-haves\n\n- Function: Sales, Business Development, Growth, or Revenue Operations.\n- Seniority: Head of, Director, VP, C-level, or Founder.\n\n## Positive signals (raise the fit, not required)\n\n- Job title mentions outbound, prospecting, lead generation, or SDR team.\n- Company is hiring SDRs or BDRs.\n- Lead uses LinkedIn Sales Navigator.\n\n## Disqualifiers (always No fit)\n\n- Students, interns, job seekers, or freelancers with no team.\n- Competitors: lead-data or email-finder vendors.\n- Company with more than 5,000 employees.\n- Government, education, or non-profit organizations.\n",
+            "levels": [
+              {
+                "label": "No fit",
+                "description": "Fails a disqualifier, or matches none of the must-haves."
+              },
+              {
+                "label": "Weak fit",
+                "description": "Matches one must-have. The other must-haves fail or are unknown."
+              },
+              {
+                "label": "Partial fit",
+                "description": "Matches most must-haves, but one fails or is unknown."
+              },
+              {
+                "label": "Strong fit",
+                "description": "Matches every must-have and no disqualifier."
+              }
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "designer": {
+          "x": 600,
+          "y": 0,
+          "name": "Build the OpenAI request"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "module": "http:ActionSendData",
+      "version": 3,
+      "parameters": {
+        "handleErrors": false,
+        "useNewZLibDeCompress": true
+      },
+      "mapper": {
+        "url": "https://api.openai.com/v1/decisions",
+        "serializeUrl": false,
+        "method": "post",
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer YOUR_OPENAI_API_KEY"
+          }
+        ],
+        "qs": [],
+        "bodyType": "raw",
+        "parseResponse": true,
+        "authUser": "",
+        "authPass": "",
+        "timeout": "",
+        "shareCookies": false,
+        "ca": "",
+        "rejectUnauthorized": true,
+        "followRedirect": true,
+        "useQuerystring": false,
+        "gzip": true,
+        "useMtls": false,
+        "contentType": "application/json",
+        "data": "{{5.json}}",
+        "followAllRedirects": false
+      },
+      "metadata": {
+        "designer": {
+          "x": 900,
+          "y": 0,
+          "name": "Score against ICP (OpenAI Decisions)"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parameters": {
+        "__IMTCONN__": null
+      },
+      "mapper": {
+        "from": "drive",
+        "mode": "select",
+        "spreadsheetId": "",
+        "sheetId": "Sheet1",
+        "includesHeaders": true,
+        "insertDataOption": "INSERT_ROWS",
+        "useColumnHeaders": false,
+        "valueInputOption": "USER_ENTERED",
+        "insertUnformatted": false,
+        "values": {
+          "0": "{{2.`Linkedin URL Public`}}",
+          "1": "{{2.`First Name`}}",
+          "2": "{{2.`Last Name`}}",
+          "3": "{{2.`Current Job`}}",
+          "4": "{{2.`Company Name`}}",
+          "5": "{{2.`Company Domain`}}",
+          "6": "{{2.`Company Industry`}}",
+          "7": "{{2.`Company Employee Exact Count`}}",
+          "8": "{{2.`Company Location`}}",
+          "9": "{{2.Email}}",
+          "10": "{{if(3.data.answers[1].type = \"score\"; round(3.data.answers[1].score / 3 * 100); \"\")}}",
+          "11": "{{if(3.data.answers[1].type = \"score\"; get(split(\"No fit,Weak fit,Partial fit,Strong fit\"; \",\"); round(3.data.answers[1].score) + 1); \"Not scored\")}}",
+          "12": "{{if(3.data.answers[1].type = \"score\"; round(3.data.answers[1].confidence * 100) / 100; \"\")}}",
+          "13": "{{formatDate(now; \"YYYY-MM-DD\")}}"
+        }
+      },
+      "metadata": {
+        "designer": {
+          "x": 1200,
+          "y": 0,
+          "name": "Add to the lead sheet"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "sequential": false,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false
+    },
+    "designer": {
+      "orphans": []
+    }
+  }
+}
