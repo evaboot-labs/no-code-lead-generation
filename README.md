@@ -77,7 +77,7 @@ Strong fit. The answer is a score from 0 to 3 and a confidence. The workflows st
 
 Sort the sheet by **ICP score**, not only by the label: an 80 can still be "Partial fit".
 For the same scoring with a Python script, HubSpot and an AI coding agent, see
-[AI-driven-Lead-Scoring](https://github.com/evaboot-labs/AI-driven-Lead-Scoring).
+[ai-driven-lead-scoring](https://github.com/evaboot-labs/ai-driven-lead-scoring).
 
 ## License
 
