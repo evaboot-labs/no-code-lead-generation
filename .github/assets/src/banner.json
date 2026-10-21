@@ -1,0 +1,7 @@
+{"layout": "flow", "eyebrow": "evaboot-labs · no-code-lead-generation", "headline": "A scored lead list, every week.",
+ "subline": "Sales Navigator leads, scored against your ICP, in a Google Sheet. No code.",
+ "nodes": [{"label": "01 · Search", "title": "Sales Navigator", "caption": "Your saved lead search"},
+           {"label": "02 · Export", "title": "Evaboot", "caption": "Verified emails, every week"},
+           {"label": "03 · Score", "title": "AI decision model", "caption": "ICP score from 0 to 100"},
+           {"label": "04 · Result", "title": "Google Sheet", "caption": "Ranked leads, ready to contact"}],
+ "spec": "runs in <em>n8n</em> or <em>Make</em> · no code to write"}
