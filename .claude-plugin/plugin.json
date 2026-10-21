@@ -1,0 +1,23 @@
+{
+  "name": "no-code-lead-generation",
+  "version": "1.0.0",
+  "description": "A weekly lead list without code: Evaboot exports Sales Navigator leads, an AI decision model scores them against your ICP, and Google Sheets stores them. n8n and Make templates, set up by your agent.",
+  "author": {
+    "name": "Evaboot",
+    "url": "https://evaboot.com"
+  },
+  "homepage": "https://evaboot.com/integrations/n8n",
+  "repository": "https://github.com/evaboot-labs/no-code-lead-generation",
+  "license": "MIT",
+  "privacyPolicyUrl": "https://evaboot.com/privacy-policy",
+  "keywords": [
+    "lead-generation",
+    "sales-navigator",
+    "n8n",
+    "make",
+    "google-sheets",
+    "lead-scoring",
+    "evaboot"
+  ],
+  "skills": "./skills/"
+}

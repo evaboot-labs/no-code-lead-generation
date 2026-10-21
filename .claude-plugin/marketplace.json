@@ -1,0 +1,17 @@
+{
+  "name": "evaboot-labs-no-code-lead-generation",
+  "owner": {
+    "name": "Evaboot",
+    "url": "https://evaboot.com"
+  },
+  "metadata": {
+    "description": "A weekly lead list without code: Evaboot exports Sales Navigator leads, an AI decision model scores them against your ICP, and Google Sheets stores them. n8n and Make templates, set up by your agent."
+  },
+  "plugins": [
+    {
+      "name": "no-code-lead-generation",
+      "source": "./",
+      "description": "A weekly lead list without code: Evaboot exports Sales Navigator leads, an AI decision model scores them against your ICP, and Google Sheets stores them. n8n and Make templates, set up by your agent."
+    }
+  ]
+}

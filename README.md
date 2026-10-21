@@ -1,84 +1,88 @@
-# No-code lead generation: Sales Navigator to Google Sheets, scored by AI
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/banner-dark.png">
+  <img src=".github/assets/banner-light.png" alt="Sales Navigator search, Evaboot export, AI decision model, Google Sheet: a scored lead list every week" width="1280">
+</picture>
 
-A weekly lead list without code. Evaboot exports your LinkedIn Sales Navigator search with
-verified emails, an AI decision model scores every lead against your ideal customer profile,
-and the leads land in a Google Sheet with an ICP score from 0 to 100.
+# No-code lead generation
 
-Two ready-made versions, same result:
+A scored lead list every week, without code. Evaboot exports your Sales Navigator search with verified emails, an AI decision model scores every lead against your ideal customer profile, and the leads land in a Google Sheet.
 
-| | n8n | Make |
-|---|---|---|
-| File | [`n8n/sales-navigator-to-google-sheets-scored.json`](n8n/sales-navigator-to-google-sheets-scored.json) | [`make/evaboot-leads-to-google-sheets-scored.blueprint.json`](make/evaboot-leads-to-google-sheets-scored.blueprint.json) |
-| Who starts the run | n8n, every Monday, asks Evaboot to export the search | Evaboot runs a weekly recurring export and pushes it to Make |
-| Duplicates | A lead already in the sheet is updated | Every lead is added as a new row |
+[![Works with Claude Code · Codex · Cursor](https://img.shields.io/badge/works%20with-Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Cursor-5719D9)](AGENTS.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-5719D9)](LICENSE)
+[![Use this template](https://img.shields.io/badge/template-use%20this%20template-5719D9)](https://github.com/evaboot-labs/no-code-lead-generation/generate)
 
-Built by [Evaboot](https://evaboot.com). More workflows: [github.com/evaboot-labs](https://github.com/evaboot-labs).
+[![An AI Agent rewrites the ideal customer profile, picks n8n and lists the import steps](.github/assets/demo.gif)](.github/assets/demo.mp4)
+
+<sub>The full run, at real speed: [demo.mp4](.github/assets/demo.mp4)</sub>
+
+## Set it up in one prompt
+
+Paste this into Claude Code, Codex or Cursor:
+
+```text
+Set up the Evaboot no-code lead list for me. Clone
+https://github.com/evaboot-labs/no-code-lead-generation, read AGENTS.md and follow the
+build-lead-list skill. Ask me about my ideal customer and whether I use n8n or Make, and
+confirm with me before anything that spends Evaboot credits.
+```
+
+<details>
+<summary>Or install the skill</summary>
+
+Claude Code:
+
+```text
+/plugin marketplace add evaboot-labs/no-code-lead-generation
+/plugin install no-code-lead-generation@evaboot-labs-no-code-lead-generation
+```
+
+Codex, Cursor and other agents:
+
+```bash
+npx skills add evaboot-labs/no-code-lead-generation
+```
+
+</details>
+
+## How it works
+
+**1. Save a focused search.** Evaboot exports the whole search, so keep it narrow.
+
+<img src=".github/assets/screenshots/1-saved-search.png" alt="A focused Sales Navigator lead search" width="800">
+
+**2. Import the workflow.** n8n or Make, with your Evaboot, OpenAI and Google credentials.
+
+<img src=".github/assets/screenshots/2-workflow.png" alt="The imported n8n workflow" width="800">
+
+**3. Get a scored sheet every week.** Each lead has an ICP score, a fit and a confidence.
+
+<img src=".github/assets/screenshots/3-scored-sheet.png" alt="The Google Sheet with ICP score, fit and confidence filled in" width="800">
+
+## n8n or Make, same sheet
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/templates-dark.png">
+  <img src=".github/assets/templates-light.png" alt="Two templates: n8n asks Evaboot every Monday and updates known leads; Make receives a weekly Evaboot export and adds every lead as a new row" width="1280">
+</picture>
+
+Both score each lead against [`ICP.md`](ICP.md) with the OpenAI Decisions API: [how the score works](docs/scoring.md).
 
 ## What you need
 
-- An [Evaboot](https://evaboot.com) account with LinkedIn Sales Navigator connected.
-- An [OpenAI API key](https://platform.openai.com/api-keys) (scoring 1,000 leads costs about 8 cents).
-- A Google Sheet with this header row:
+- **An Evaboot account** with LinkedIn Sales Navigator connected. [Create one](https://dash.evaboot.com/accounts/signup/?last_click_origin=no-code-lead-generation-repo).
+- **An OpenAI API key.** Scoring 1,000 leads costs about 8 cents.
+- **A Google Sheet** with the header row from [the skill](skills/build-lead-list/SKILL.md).
+- **n8n or Make.**
+- **Cost:** one Evaboot credit per lead exported, plus the OpenAI cost.
 
-  ```
-  LinkedIn URL, First name, Last name, Job title, Company, Company domain, Industry, Employees, Company location, Email, ICP score, ICP fit, Confidence, Added on
-  ```
+## Go further
 
-- Your ideal customer profile. Start from [`ICP.md`](ICP.md) and replace every line.
+| Page | For |
+|---|---|
+| [n8n workflow](docs/n8n.md) | Install the Evaboot node, import, fill in your settings |
+| [Make scenario](docs/make.md) | Import the blueprint and connect a weekly Evaboot export |
+| [How the score works](docs/scoring.md) | The ICP score, fit and confidence columns |
 
-Evaboot exports the whole search and uses one credit per lead, so keep the search focused.
-A search with the "Changed jobs in the past 90 days" filter brings new people every week.
+---
 
-## n8n
-
-1. Install the Evaboot node: **Settings > Community nodes**, package `@evaboot-team/n8n-nodes-evaboot`
-   (it is a verified node, so it also works on n8n Cloud).
-2. Create a new workflow, open the **…** menu next to its name and choose **Import from file**.
-3. Add three credentials: **Evaboot** (API key from dash.evaboot.com > API key), **OpenAI** and **Google Sheets**.
-4. Open **Your settings** and fill in:
-   - your Sales Navigator search URL,
-   - your ICP (paste your `ICP.md`),
-   - the Google Sheet URL, copied while the right tab is open (it ends with `gid=…`).
-5. Click **Execute workflow** to test, then **Publish** to run it every Monday at 8am.
-
-The workflow keeps only leads that match your Sales Navigator filters and have a **safe** email,
-then scores each one with the OpenAI Decisions API.
-
-## Make
-
-1. In Make, create a scenario, open the **…** menu and choose **Import Blueprint**.
-2. Open the first module (**Evaboot export finished**), click **Add**, and copy the webhook URL.
-3. Open **Build the OpenAI request**, click **Add data structure > Generate**, and paste the
-   example below. Then put your ICP after "ideal customer profile below:" in **instructions**.
-
-   ```json
-   {"model": "gpt-6-luna", "input": "lead", "questions": [{"type": "score", "name": "icp_fit", "instructions": "text", "levels": [{"label": "No fit", "description": "text"}]}]}
-   ```
-
-4. Open **Score against ICP**, and replace `YOUR_OPENAI_API_KEY` in the Authorization header.
-5. Open **Add to the lead sheet**, connect Google, and choose your sheet and tab.
-6. Turn the scenario on.
-7. In Evaboot, open **Integrations > New integration > Make**, paste the webhook URL, and choose to
-   push the runs of a **recurring export** of your Sales Navigator search (weekly).
-
-To test it once, push any finished export to the Make integration from Evaboot.
-
-## How the score works
-
-Each lead goes to the [OpenAI Decisions API](https://developers.openai.com/api/docs/guides/decisions)
-(model `gpt-6-luna`) as one `score` question with four levels: No fit, Weak fit, Partial fit and
-Strong fit. The answer is a score from 0 to 3 and a confidence. The workflows store it as:
-
-| Column | Example | Meaning |
-|---|---|---|
-| ICP score | 83 | score ÷ 3 × 100 |
-| ICP fit | Strong fit | the nearest level |
-| Confidence | 0.5 | how sure the model is, 0 to 1 |
-
-Sort the sheet by **ICP score**, not only by the label: an 80 can still be "Partial fit".
-For the same scoring with a Python script, HubSpot and an AI coding agent, see
-[ai-driven-lead-scoring](https://github.com/evaboot-labs/ai-driven-lead-scoring).
-
-## License
-
-MIT
+Agents: start at [AGENTS.md](AGENTS.md) · Built by [Evaboot](https://evaboot.com) · More workflows at [github.com/evaboot-labs](https://github.com/evaboot-labs) · [MIT license](LICENSE)
