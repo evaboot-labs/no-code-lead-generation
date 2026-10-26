@@ -19,4 +19,19 @@ Evaboot runs a weekly recurring export of your Sales Navigator search and pushes
 
 To test it once, push any finished export to the Make integration from Evaboot.
 
+
+## Use JEV instead of OpenAI
+
+If you have a [Typesafe JEV](https://typesafe.ai) key, import
+[`make/evaboot-leads-to-google-sheets-scored-jev.blueprint.json`](../make/evaboot-leads-to-google-sheets-scored-jev.blueprint.json)
+and follow the same steps, with two changes. In step 3, generate the data structure from this
+example. In step 4, replace `YOUR_JEV_API_KEY`.
+
+```json
+{"model": "jev-1.14.0", "state": {"ideal_customer_profile": "text", "lead": "text"}, "questions": {"icp_fit": {"type": "score", "instructions": "text", "criteria": ["text"]}}}
+```
+
+Your ICP goes in **state > ideal_customer_profile**. The template is pinned to `jev-1.14.0`, so
+a new JEV release does not move your scores.
+
 Back to the [README](../README.md).

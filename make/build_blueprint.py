@@ -1,6 +1,7 @@
 """Build the Make blueprint. Run: python3 make/build_blueprint.py
 Writes make/evaboot-leads-to-google-sheets-scored.blueprint.json (the public template).
-With --test HOOK_ID CONNECTION_ID SPREADSHEET_ID SHEET_NAME OPENAI_KEY it prints a filled copy instead.
+Also writes the Typesafe JEV copy (…-jev.blueprint.json).
+With --test HOOK_ID CONNECTION_ID SPREADSHEET_ID SHEET_NAME KEY DATA_STRUCTURE_ID [jev] it prints a filled copy instead.
 """
 import json
 import sys
@@ -28,7 +29,16 @@ LEAD_TEXT = "\n".join([
 ])
 
 
-def blueprint(hook, connection, spreadsheet, sheet, openai_key, data_structure=None):
+def jev_request():
+    """The same score question for Typesafe JEV, pinned to a release so the levels keep scoring the same."""
+    return {"model": "jev-1.14.0", "state": {"ideal_customer_profile": ICP, "lead": LEAD_TEXT},
+            "questions": {"icp_fit": {"type": "score",
+                                      "instructions": "How well does `lead` match `ideal_customer_profile`?",
+                                      "criteria": [f"{l}: {d}" for l, d in LEVELS]}}}
+
+
+def blueprint(hook, connection, spreadsheet, sheet, openai_key, data_structure=None, jev=False):
+    answer = "3.data.answers.icp_fit" if jev else "3.data.answers[1]"
     flow = [
         {"id": 1, "module": "gateway:CustomWebHook", "version": 1,
          "parameters": {"hook": hook, "maxResults": 1}, "mapper": {},
@@ -41,20 +51,20 @@ def blueprint(hook, connection, spreadsheet, sheet, openai_key, data_structure=N
          "filter": {"name": "Matching leads with a safe email", "conditions": [[
              {"a": "{{2.`Matches Filters`}}", "b": "YES", "o": "text:equal:ci"},
              {"a": "{{2.`Email Status`}}", "b": "safe", "o": "text:equal:ci"}]]},
-         "mapper": {"model": "gpt-6-luna", "input": LEAD_TEXT, "questions": [{
+         "mapper": jev_request() if jev else {"model": "gpt-6-luna", "input": LEAD_TEXT, "questions": [{
              "type": "score", "name": "icp_fit",
              "instructions": "How well does this lead match the ideal customer profile below?\n\n" + ICP,
              "levels": [{"label": l, "description": d} for l, d in LEVELS]}]},
-         "metadata": {"designer": {"x": 600, "y": 0, "name": "Build the OpenAI request"}}},
+         "metadata": {"designer": {"x": 600, "y": 0, "name": "Build the JEV request" if jev else "Build the OpenAI request"}}},
         {"id": 3, "module": "http:ActionSendData", "version": 3,
          "parameters": {"handleErrors": False, "useNewZLibDeCompress": True},
-         "mapper": {"url": "https://api.openai.com/v1/decisions", "serializeUrl": False, "method": "post",
+         "mapper": {"url": "https://api.typesafe.ai/v1/systemone" if jev else "https://api.openai.com/v1/decisions", "serializeUrl": False, "method": "post",
                     "headers": [{"name": "Authorization", "value": "Bearer " + openai_key}],
                     "qs": [], "bodyType": "raw", "parseResponse": True, "authUser": "", "authPass": "",
                     "timeout": "", "shareCookies": False, "ca": "", "rejectUnauthorized": True,
                     "followRedirect": True, "useQuerystring": False, "gzip": True, "useMtls": False,
                     "contentType": "application/json", "data": "{{5.json}}", "followAllRedirects": False},
-         "metadata": {"designer": {"x": 900, "y": 0, "name": "Score against ICP (OpenAI Decisions)"}}},
+         "metadata": {"designer": {"x": 900, "y": 0, "name": "Score against ICP (Typesafe JEV)" if jev else "Score against ICP (OpenAI Decisions)"}}},
         {"id": 4, "module": "google-sheets:addRow", "version": 2,
          "parameters": {"__IMTCONN__": connection},
          "mapper": {"from": "drive", "mode": "select", "spreadsheetId": spreadsheet, "sheetId": sheet,
@@ -65,13 +75,13 @@ def blueprint(hook, connection, spreadsheet, sheet, openai_key, data_structure=N
                         "3": "{{2.`Current Job`}}", "4": "{{2.`Company Name`}}", "5": "{{2.`Company Domain`}}",
                         "6": "{{2.`Company Industry`}}", "7": "{{2.`Company Employee Exact Count`}}",
                         "8": "{{2.`Company Location`}}", "9": "{{2.Email}}",
-                        "10": "{{if(3.data.answers[1].type = \"score\"; round(3.data.answers[1].score / 3 * 100); \"\")}}",
-                        "11": "{{if(3.data.answers[1].type = \"score\"; get(split(\"No fit,Weak fit,Partial fit,Strong fit\"; \",\"); round(3.data.answers[1].score) + 1); \"Not scored\")}}",
-                        "12": "{{if(3.data.answers[1].type = \"score\"; round(3.data.answers[1].confidence * 100) / 100; \"\")}}",
+                        "10": f"{{{{if({answer}.type = \"score\"; round({answer}.score / 3 * 100); \"\")}}}}",
+                        "11": f"{{{{if({answer}.type = \"score\"; get(split(\"No fit,Weak fit,Partial fit,Strong fit\"; \",\"); round({answer}.score) + 1); \"Not scored\")}}}}",
+                        "12": f"{{{{if({answer}.type = \"score\"; round({answer}.confidence * 100) / 100; \"\")}}}}",
                         "13": "{{formatDate(now; \"YYYY-MM-DD\")}}"}},
          "metadata": {"designer": {"x": 1200, "y": 0, "name": "Add to the lead sheet"}}},
     ]
-    return {"name": "Weekly lead list: Evaboot to Google Sheets, scored by AI", "flow": flow,
+    return {"name": "Weekly lead list: Evaboot to Google Sheets, scored by AI" + (" (JEV)" if jev else ""), "flow": flow,
             "metadata": {"instant": True, "version": 1,
                          "scenario": {"roundtrips": 1, "maxErrors": 3, "autoCommit": True, "sequential": False,
                                       "confidential": False, "dataloss": False, "dlq": False},
@@ -81,8 +91,11 @@ def blueprint(hook, connection, spreadsheet, sheet, openai_key, data_structure=N
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--test":
         hook, conn, sheet_id, sheet_name, key, ds = sys.argv[2:8]
-        print(json.dumps(blueprint(int(hook), int(conn), "/" + sheet_id, sheet_name, key, int(ds))))
+        print(json.dumps(blueprint(int(hook), int(conn), "/" + sheet_id, sheet_name, key, int(ds), jev=sys.argv[8:] == ["jev"])))
     else:
         out = HERE / "evaboot-leads-to-google-sheets-scored.blueprint.json"
         out.write_text(json.dumps(blueprint(None, None, "", "Sheet1", "YOUR_OPENAI_API_KEY"), indent=2) + "\n")
         print(f"Wrote {out}")
+        jev_out = HERE / "evaboot-leads-to-google-sheets-scored-jev.blueprint.json"
+        jev_out.write_text(json.dumps(blueprint(None, None, "", "Sheet1", "YOUR_JEV_API_KEY", jev=True), indent=2) + "\n")
+        print(f"Wrote {jev_out}")
