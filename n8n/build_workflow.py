@@ -11,6 +11,45 @@ SHEETS_CRED = {"googleSheetsOAuth2Api": {"id": "", "name": "Google Sheets"}}
 EVABOOT = "@evaboot-team/n8n-nodes-evaboot.evaboot"
 
 
+JEV_CRED = {"httpHeaderAuth": {"id": "", "name": "Typesafe JEV"}}
+
+
+def jev_body(lead_expr, icp_expr):
+    """The same score question for Typesafe JEV. Pinned to a release so the levels keep scoring the same."""
+    return f"""={{{{ JSON.stringify({{
+  model: 'jev-1.14.0',
+  state: {{ ideal_customer_profile: {icp_expr}, lead: {lead_expr} }},
+  questions: {{ icp_fit: {{
+    type: 'score',
+    instructions: 'How well does `lead` match `ideal_customer_profile`?',
+    criteria: [
+      'No fit: Fails a disqualifier, or matches none of the must-haves.',
+      'Weak fit: Matches one must-have. The other must-haves fail or are unknown.',
+      'Partial fit: Matches most must-haves, but one fails or is unknown.',
+      'Strong fit: Matches every must-have and no disqualifier.'
+    ]
+  }} }}
+}}) }}}}"""
+
+
+def to_jev(workflow, score_node, map_node):
+    """Swap the OpenAI scoring node for Typesafe JEV. Everything else stays the same."""
+    text = json.dumps(workflow, ensure_ascii=False)
+    text = text.replace("the OpenAI Decisions API", "Typesafe JEV").replace("The OpenAI Decisions API", "Typesafe JEV").replace("**OpenAI**", "**Typesafe JEV** (Header Auth: name `Authorization`, value `Bearer YOUR_KEY`)")
+    text = text.replace("an OpenAI API key", "a Typesafe JEV API key")
+    jev = json.loads(text)
+    jev["name"] += " (JEV)"
+    for n in jev["nodes"]:
+        if n["name"] == score_node:
+            n["parameters"].update({"url": "https://api.typesafe.ai/v1/systemone", "authentication": "genericCredentialType",
+                                    "genericAuthType": "httpHeaderAuth", "jsonBody": JEV_BODY})
+            n["parameters"].pop("nodeCredentialType", None)
+            n["credentials"] = JEV_CRED
+        if n["name"] == map_node:
+            n["parameters"]["jsCode"] = n["parameters"]["jsCode"].replace("$json.answers[0]", "$json.answers.icp_fit")
+    return jev
+
+
 def node(name, type_, version, position, parameters, **extra):
     return {"id": str(uuid.uuid5(uuid.NAMESPACE_URL, "nocode/" + name)), "name": name, "type": type_,
             "typeVersion": version, "position": position, "parameters": parameters, **extra}
@@ -70,6 +109,17 @@ return {
   'Confidence': Math.round(answer.confidence * 100) / 100,
   'Added on': $now.toFormat('yyyy-LL-dd'),
 };"""
+
+JEV_BODY = jev_body("""[
+      'Job title: ' + $json['Current Job'],
+      'Company: ' + $json['Company Name'],
+      'Company industry: ' + ($json['Company Industry'] || 'unknown'),
+      'Company employees: ' + ($json['Company Employee Exact Count'] || 'unknown'),
+      'Company location: ' + ($json['Company Location'] || 'unknown'),
+      'Lead location: ' + ($json['Location'] || 'unknown'),
+      'Sales team size: ' + ($json['Sales Team Size'] || 'unknown'),
+      'Company description: ' + String($json['Company Description'] || '').slice(0, 600)
+    ].join('\\n')""", "$('Your settings').first().json.icp")
 
 OVERVIEW = """## Weekly lead list: Sales Navigator to Google Sheets, scored by AI
 
@@ -163,3 +213,6 @@ workflow = {"name": "Weekly lead list: Sales Navigator to Google Sheets, scored 
 out = HERE / "sales-navigator-to-google-sheets-scored.json"
 out.write_text(json.dumps(workflow, indent=2, ensure_ascii=False) + "\n")
 print(f"Wrote {out} ({len(nodes)} nodes)")
+jev_out = HERE / "sales-navigator-to-google-sheets-scored-jev.json"
+jev_out.write_text(json.dumps(to_jev(workflow, "Score against ICP", "Build the sheet row"), indent=2, ensure_ascii=False) + "\n")
+print(f"Wrote {jev_out}")

@@ -1,0 +1,496 @@
+{
+  "name": "Weekly lead list: Sales Navigator to Google Sheets, scored by AI (JEV)",
+  "nodes": [
+    {
+      "id": "14445c68-c003-5d0e-99fd-227a5bd6acc1",
+      "name": "Template overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -820,
+        -340
+      ],
+      "parameters": {
+        "color": 7,
+        "width": 540,
+        "height": 900,
+        "content": "## Weekly lead list: Sales Navigator to Google Sheets, scored by AI\n\n**Who it's for:** anyone who prospects in LinkedIn Sales Navigator and wants a fresh, ranked lead list every week without code.\n\n**What it does:** every Monday, Evaboot exports your saved Sales Navigator search and finds verified emails. The workflow keeps the leads that really match your filters and have a safe email, scores each one against your ideal customer profile with Typesafe JEV, and adds them to a Google Sheet with an ICP score from 0 to 100. A lead that is already in the sheet is updated, never duplicated.\n\n### How to set up\n1. Install the Evaboot node (Settings > Community nodes, `@evaboot-team/n8n-nodes-evaboot`).\n2. Add credentials: **Evaboot** (API key from dash.evaboot.com > API key), **Typesafe JEV** (Header Auth: name `Authorization`, value `Bearer YOUR_KEY`), **Google Sheets**.\n3. Make a Google Sheet with a header row: LinkedIn URL, First name, Last name, Job title, Company, Company domain, Industry, Employees, Company location, Email, ICP score, ICP fit, Confidence, Added on.\n4. Fill in **Your settings**: your Sales Navigator search URL, your ICP, and the sheet URL copied from the browser while the right tab is open (it ends with `gid=…`).\n5. Click **Execute workflow** to test, then activate it.\n\n### Good to know\nEvaboot exports the whole search and charges one credit per lead, so keep the search focused. A 100-lead export takes about 5 minutes.\n\nThe same workflow for Make and as a Python script: github.com/evaboot-labs"
+      }
+    },
+    {
+      "id": "747f82e0-e3e1-5ba3-920f-2a282afd4967",
+      "name": "Step 1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        -160
+      ],
+      "parameters": {
+        "color": 7,
+        "width": 700,
+        "height": 440,
+        "content": "### 1. Settings\nEvery Monday, or by hand with **Test run**. Put your Sales Navigator search, your ICP and your Google Sheet in **Your settings**."
+      }
+    },
+    {
+      "id": "568e1f77-8785-5616-8747-8a35ae264318",
+      "name": "Step 2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        500,
+        -160
+      ],
+      "parameters": {
+        "color": 7,
+        "width": 900,
+        "height": 440,
+        "content": "### 2. Export with Evaboot\nEvaboot exports the search and finds verified emails. The workflow checks every 2 minutes until the export is done."
+      }
+    },
+    {
+      "id": "1cc6887e-6755-56b8-9fda-33f3ed655058",
+      "name": "Step 3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        -160
+      ],
+      "parameters": {
+        "color": 7,
+        "width": 1160,
+        "height": 440,
+        "content": "### 3. Filter, score and save\nKeeps leads that match your filters and have a **safe** email. Typesafe JEV scores each one against your ICP, then the lead is added to the sheet, or updated if its LinkedIn URL is already there."
+      }
+    },
+    {
+      "id": "17dd98cd-df45-5eed-b56d-fcaa35035a2f",
+      "name": "Every Monday at 8am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -200,
+        -20
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "dcae5d13-ffac-5b83-8a7a-b6304500b1a0",
+      "name": "Test run",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        160
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "b1eaf6c7-c664-56ba-94d8-e340b74d81ac",
+      "name": "Your settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        40,
+        60
+      ],
+      "parameters": {
+        "mode": "manual",
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "url",
+              "name": "salesNavigatorUrl",
+              "type": "string",
+              "value": "https://www.linkedin.com/sales/search/people?query=REPLACE_WITH_YOUR_SEARCH"
+            },
+            {
+              "id": "icp",
+              "name": "icp",
+              "type": "string",
+              "value": "# Ideal customer profile\n\n<!--\nReplace every line below with your own profile. Keep it short and concrete:\nthe model reads this whole file for every lead.\nWrite each criterion so a stranger could answer yes or no from a LinkedIn profile.\n-->\n\n## Company must-haves\n\n- Industry: B2B software (SaaS), IT services, or recruiting agencies.\n- Size: 11 to 500 employees.\n- Location: Europe or North America.\n- Sells to other businesses, with an outbound sales team.\n\n## Buyer must-haves\n\n- Function: Sales, Business Development, Growth, or Revenue Operations.\n- Seniority: Head of, Director, VP, C-level, or Founder.\n\n## Positive signals (raise the fit, not required)\n\n- Job title mentions outbound, prospecting, lead generation, or SDR team.\n- Company is hiring SDRs or BDRs.\n- Lead uses LinkedIn Sales Navigator.\n\n## Disqualifiers (always No fit)\n\n- Students, interns, job seekers, or freelancers with no team.\n- Competitors: lead-data or email-finder vendors.\n- Company with more than 5,000 employees.\n- Government, education, or non-profit organizations.\n"
+            },
+            {
+              "id": "sheet",
+              "name": "sheetUrl",
+              "type": "string",
+              "value": "https://docs.google.com/spreadsheets/d/REPLACE_WITH_YOUR_SHEET_ID/edit?gid=REPLACE_WITH_THE_TAB_ID"
+            }
+          ]
+        }
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "36bdff7a-a049-5635-9ac9-0d4394b21739",
+      "name": "Export Sales Navigator search",
+      "type": "@evaboot-team/n8n-nodes-evaboot.evaboot",
+      "typeVersion": 1,
+      "position": [
+        560,
+        60
+      ],
+      "parameters": {
+        "resource": "extraction",
+        "operation": "createUrl",
+        "searchName": "={{ 'Weekly lead list ' + $now.toFormat('yyyy-LL-dd') }}",
+        "linkedinUrl": "={{ $json.salesNavigatorUrl }}"
+      },
+      "credentials": {
+        "evabootApi": {
+          "id": "",
+          "name": "Evaboot account"
+        }
+      }
+    },
+    {
+      "id": "db545df4-bc8a-5253-af83-6dcd39a1a281",
+      "name": "Wait 2 minutes",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        780,
+        60
+      ],
+      "parameters": {
+        "unit": "minutes",
+        "amount": 2
+      }
+    },
+    {
+      "id": "6a79648b-a6d1-5e23-aa5d-6f6848fc7e58",
+      "name": "Check the export",
+      "type": "@evaboot-team/n8n-nodes-evaboot.evaboot",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        60
+      ],
+      "parameters": {
+        "resource": "extraction",
+        "operation": "get",
+        "extractionId": "={{ $('Export Sales Navigator search').item.json.extraction_id }}"
+      },
+      "credentials": {
+        "evabootApi": {
+          "id": "",
+          "name": "Evaboot account"
+        }
+      }
+    },
+    {
+      "id": "5fbe4ca7-6430-58bb-91c9-d82a1df07c3f",
+      "name": "Export finished?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1220,
+        60
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 2,
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "9e80285e-09d2-4834-9d39-b2985f730be2",
+              "leftValue": "={{ ['EXECUTED','FAILED','PAUSED'].includes($json.status) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "0f232320-1476-51b1-9de2-dec8dcc70dcf",
+      "name": "One item per lead",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1480,
+        40
+      ],
+      "parameters": {
+        "fieldToSplitOut": "prospects",
+        "options": {}
+      }
+    },
+    {
+      "id": "13dae4c0-c90d-5f56-9a89-4b623d36d62f",
+      "name": "Keep matching leads with a safe email",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1700,
+        40
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 2,
+            "caseSensitive": false,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "77a95e31-6da5-4674-a023-900df7273874",
+              "leftValue": "={{ $json['Matches Filters'] }}",
+              "rightValue": "YES",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "d7234899-5b33-4b17-b814-b8f45027b979",
+              "leftValue": "={{ $json['Email Status'] }}",
+              "rightValue": "safe",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cb4c45f6-6bf7-5b0a-9fb6-84e8ec32fc80",
+      "name": "Score against ICP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        40
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.typesafe.ai/v1/systemone",
+        "authentication": "genericCredentialType",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: 'jev-1.14.0',\n  state: { ideal_customer_profile: $('Your settings').first().json.icp, lead: [\n      'Job title: ' + $json['Current Job'],\n      'Company: ' + $json['Company Name'],\n      'Company industry: ' + ($json['Company Industry'] || 'unknown'),\n      'Company employees: ' + ($json['Company Employee Exact Count'] || 'unknown'),\n      'Company location: ' + ($json['Company Location'] || 'unknown'),\n      'Lead location: ' + ($json['Location'] || 'unknown'),\n      'Sales team size: ' + ($json['Sales Team Size'] || 'unknown'),\n      'Company description: ' + String($json['Company Description'] || '').slice(0, 600)\n    ].join('\\n') },\n  questions: { icp_fit: {\n    type: 'score',\n    instructions: 'How well does `lead` match `ideal_customer_profile`?',\n    criteria: [\n      'No fit: Fails a disqualifier, or matches none of the must-haves.',\n      'Weak fit: Matches one must-have. The other must-haves fail or are unknown.',\n      'Partial fit: Matches most must-haves, but one fails or is unknown.',\n      'Strong fit: Matches every must-have and no disqualifier.'\n    ]\n  } }\n}) }}",
+        "options": {},
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Typesafe JEV"
+        }
+      }
+    },
+    {
+      "id": "200521d0-7dcd-584f-9fc8-491ffd61eb11",
+      "name": "Build the sheet row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2140,
+        40
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// One sheet row per lead: the Evaboot data plus the AI fit score.\nconst lead = $('Keep matching leads with a safe email').item.json;\nconst answer = $json.answers.icp_fit;\nconst fits = ['No fit', 'Weak fit', 'Partial fit', 'Strong fit'];\nreturn {\n  'LinkedIn URL': lead['Linkedin URL Public'],\n  'First name': lead['First Name'],\n  'Last name': lead['Last Name'],\n  'Job title': lead['Current Job'],\n  'Company': lead['Company Name'],\n  'Company domain': lead['Company Domain'],\n  'Industry': lead['Company Industry'],\n  'Employees': lead['Company Employee Exact Count'],\n  'Company location': lead['Company Location'],\n  'Email': lead['Email'],\n  'ICP score': Math.round(answer.score / 3 * 100),\n  'ICP fit': fits[Math.round(answer.score)],\n  'Confidence': Math.round(answer.confidence * 100) / 100,\n  'Added on': $now.toFormat('yyyy-LL-dd'),\n};"
+      }
+    },
+    {
+      "id": "820f67d4-ed86-5874-8708-9b98cb8e824a",
+      "name": "Add or update in Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2360,
+        40
+      ],
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "={{ $('Your settings').first().json.sheetUrl }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "url",
+          "value": "={{ $('Your settings').first().json.sheetUrl }}"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "LinkedIn URL"
+          ],
+          "schema": []
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every Monday at 8am": {
+      "main": [
+        [
+          {
+            "node": "Your settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test run": {
+      "main": [
+        [
+          {
+            "node": "Your settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Your settings": {
+      "main": [
+        [
+          {
+            "node": "Export Sales Navigator search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Export Sales Navigator search": {
+      "main": [
+        [
+          {
+            "node": "Wait 2 minutes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 2 minutes": {
+      "main": [
+        [
+          {
+            "node": "Check the export",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check the export": {
+      "main": [
+        [
+          {
+            "node": "Export finished?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Export finished?": {
+      "main": [
+        [
+          {
+            "node": "One item per lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 2 minutes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One item per lead": {
+      "main": [
+        [
+          {
+            "node": "Keep matching leads with a safe email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep matching leads with a safe email": {
+      "main": [
+        [
+          {
+            "node": "Score against ICP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score against ICP": {
+      "main": [
+        [
+          {
+            "node": "Build the sheet row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build the sheet row": {
+      "main": [
+        [
+          {
+            "node": "Add or update in Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -65,7 +65,7 @@ npx skills add evaboot-labs/no-code-lead-generation
   <img src=".github/assets/templates-light.png" alt="Two templates: n8n asks Evaboot every Monday and updates known leads; Make receives a weekly Evaboot export and adds every lead as a new row" width="1280">
 </picture>
 
-Both score each lead against [`ICP.md`](ICP.md) with the OpenAI Decisions API: [how the score works](docs/scoring.md).
+Both score each lead against [`ICP.md`](ICP.md) with the OpenAI Decisions API: [how the score works](docs/scoring.md). Each template also has a Typesafe JEV copy, for teams with a JEV key.
 
 ## What you need
 
